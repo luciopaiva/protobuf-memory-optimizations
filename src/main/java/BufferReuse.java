@@ -40,6 +40,11 @@ public class BufferReuse {
         return builder.build();
     }
 
+    /**
+     * This is the usual way to serialize messages. Serialize to a ByteString and then copy it to a reusable byte
+     * buffer. The problem here is that ByteString allocates its own byte array only to be copied to our own buffer
+     * immediately after.
+     */
     private static void serialize() {
         byteBuffer.clear();
         ByteString byteString = foo.toByteString();
@@ -47,6 +52,12 @@ public class BufferReuse {
         byteBuffer.flip();
     }
 
+    /**
+     * This is a proposed new way of serializing messages. We hand our own byte array to protobuf so it can serialize
+     * the message directly to the final buffer. This avoids both the extra copy needed and the extra memory allocation.
+     *
+     * Would it be possible to reuse the CodedOutputStream instance?
+     */
     private static void serializeReuse() {
         CodedOutputStream output = CodedOutputStream.newInstance(byteArray);
         try {
@@ -56,11 +67,17 @@ public class BufferReuse {
         }
     }
 
+    /**
+     * This is the usual way of deserializing a message. Copy from our buffer to a ByteString instance and then pass it
+     * to protobuf.
+     */
     private static void deserialize() {
         ByteString byteString = ByteString.copyFrom(byteBuffer);
         byteBuffer.flip();
         try {
             Protocol.Foo foo = parser.parseFrom(byteString);
+
+            // this is just to avoid the line above being optimized away by the hotspot compiler
             if (foo.getBarCount() != PAYLOAD_SIZE) {
                 System.out.println("Output zero!");
             }
@@ -69,6 +86,10 @@ public class BufferReuse {
         }
     }
 
+    /**
+     * This is a proposed new way of deserializing messages. We tell the parser to deserialize it directly to out byte
+     * array. This avoids both the extra copy needed and the extra memory allocation.
+     */
     private static void deserializeReuse() {
         try {
             Protocol.Foo foo = parser.parseFrom(byteArray, 0, serializedSize);
