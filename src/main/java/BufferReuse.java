@@ -118,9 +118,9 @@ public class BufferReuse {
     }
 
     public static void main(String ...args) {
-        runCountAllocatedBytesMultiple(BufferReuse::serialize, "Serialization (no reuse)");
-        runCountAllocatedBytesMultiple(BufferReuse::deserialize, "Deserialization (no reuse)");
-        runCountAllocatedBytesMultiple(BufferReuse::serializeReuse, "Serialization (reuse)");
-        runCountAllocatedBytesMultiple(BufferReuse::deserializeReuse, "Deserialization (reuse)");
+        runCountAllocatedBytesMultiple(BufferReuse::serialize, "Serialization (original)");
+        runCountAllocatedBytesMultiple(BufferReuse::serializeReuse, "Serialization (optimized)");
+        runCountAllocatedBytesMultiple(BufferReuse::deserialize, "Deserialization (original)");
+        runCountAllocatedBytesMultiple(BufferReuse::deserializeReuse, "Deserialization (optimized)");
     }
 }
