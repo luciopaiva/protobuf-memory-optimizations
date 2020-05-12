@@ -1,5 +1,5 @@
 
-# Protobuf buffer memory optimizations
+# Protobuf memory optimizations
 
 This is a simple experiment to show how reusing objects can hugely improve memory allocations needed to serialize protobuf messages.
 

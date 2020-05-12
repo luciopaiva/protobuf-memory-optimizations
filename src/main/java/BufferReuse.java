@@ -1,11 +1,9 @@
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.sun.management.ThreadMXBean;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 
@@ -14,6 +12,7 @@ public class BufferReuse {
     private static final int BUFFER_SIZE = 2048;
     private static final int PAYLOAD_SIZE = 512;  // serializes to 1408 bytes, similar to a full MTU
     private static final int COUNT = 100000;
+    private static final int RUNS = 4;
 
     private static final Protocol.Foo foo;
     private static final int serializedSize;
@@ -27,8 +26,7 @@ public class BufferReuse {
         foo = buildSampleMessage();
         serializedSize = foo.getSerializedSize();
         byteArray = new byte[BUFFER_SIZE];
-//        byteBuffer = ByteBuffer.wrap(byteArray);
-        byteBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);  // This is already reused
+        byteBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
         mxBean = (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
         threadId = Thread.currentThread().getId();
         parser = Protocol.Foo.getDefaultInstance().getParserForType();
@@ -44,18 +42,15 @@ public class BufferReuse {
 
     private static void serialize() {
         byteBuffer.clear();
-        ByteString byteString = foo.toByteString();  // ToDo avoid this
+        ByteString byteString = foo.toByteString();
         byteString.copyTo(byteBuffer);
         byteBuffer.flip();
     }
 
     private static void serializeReuse() {
-//        byteBuffer.clear();
         CodedOutputStream output = CodedOutputStream.newInstance(byteArray);
         try {
             foo.writeTo(output);
-//            byteBuffer.position(foo.getSerializedSize());
-//            byteBuffer.flip();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,29 +84,22 @@ public class BufferReuse {
         long bytesBefore = mxBean.getThreadAllocatedBytes(threadId);
         for (int i = 0; i < COUNT; i++) {
             runnable.run();
-//            deserialize();
         }
         long bytesAfter = mxBean.getThreadAllocatedBytes(threadId);
         long mega = Math.round((bytesAfter - bytesBefore) / (1024d * 1024d));
         System.out.println(String.format("%s: %d MB", message, mega));
     }
 
-    private static void runCountAllocatedBytesMultiple(Runnable runnable, String message, int times) {
-        for (int i = 0; i < times; i++) {
+    private static void runCountAllocatedBytesMultiple(Runnable runnable, String message) {
+        for (int i = 0; i < RUNS; i++) {
             runCountAllocatedBytes(runnable, message);
         }
     }
 
     public static void main(String ...args) {
-
-//        serialize();
-//        deserialize();
-        serializeReuse();
-        deserializeReuse();
-
-        runCountAllocatedBytesMultiple(BufferReuse::serialize, "Serialization (no reuse)", 2);
-        runCountAllocatedBytesMultiple(BufferReuse::deserialize, "Deserialization (no reuse)", 2);
-        runCountAllocatedBytesMultiple(BufferReuse::serializeReuse, "Serialization (reuse)", 2);
-        runCountAllocatedBytesMultiple(BufferReuse::deserializeReuse, "Deserialization (reuse)", 2);
+        runCountAllocatedBytesMultiple(BufferReuse::serialize, "Serialization (no reuse)");
+        runCountAllocatedBytesMultiple(BufferReuse::deserialize, "Deserialization (no reuse)");
+        runCountAllocatedBytesMultiple(BufferReuse::serializeReuse, "Serialization (reuse)");
+        runCountAllocatedBytesMultiple(BufferReuse::deserializeReuse, "Deserialization (reuse)");
     }
 }
