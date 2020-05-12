@@ -1,0 +1,6 @@
+
+syntax = "proto2";
+
+message Foo {
+    repeated int32 bar = 1;
+}
