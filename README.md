@@ -17,6 +17,12 @@ Deserialization points to an economy of 10%:
 
 The rationale for the deserialization benchmark being not so good is that we can't avoid the resulting final objects created by protobuf, since protobuf does not allow reusing existing objects.
 
+This is sad, because those objects could be easily reused if the code allowed doing so. Some interesting references about this:
+
+- [Can I re-use object instances to avoid allocations with protobuf-java?](https://github.com/protocolbuffers/protobuf/issues/5825)
+- [Improving performance of protocol buffers](https://stackoverflow.com/a/21870564/778272)
+- [Deserialize Google Protobuf wire message on existing object](https://stackoverflow.com/q/55405495/778272)
+
 ## How to run
 
 Just use gradle to build the project (I recommend using an IDE like IntelliJ).
